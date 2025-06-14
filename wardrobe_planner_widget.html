@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Henkerman<sup>&reg;</sup> Wardrobe Planner</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 20px auto;
+      padding: 20px;
+      background-color: #ddd2c0;
+      border: 1px solid #c9beb5;
+      border-radius: 12px;
+      box-shadow: 0 0 12px rgba(0,0,0,0.05);
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      color: #5b504a;
+      font-weight: bold;
+    }
+    input, select {
+      max-width: 100%;
+      box-sizing: border-box;
+      width: 100%;
+      padding: 12px;
+      margin-top: 5px;
+      border-radius: 6px;
+      border: 1px solid #c9beb5;
+      background-color: #fff;
+      color: #2d2b29;
+    }
+    button {
+      margin-top: 20px;
+      padding: 12px;
+      width: 100%;
+      background-color: #27150f;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .result, .total {
+      margin-top: 20px;
+      font-weight: bold;
+      font-size: 1.2em;
+      text-align: center;
+      color: #2d2b29;
+    }
+    .space-entry {
+      border-top: 1px solid #d6ccc2;
+      margin-top: 20px;
+      padding-top: 10px;
+      color: #2d2b29;
+    }
+    .space-entry ul {
+      padding-left: 20px;
+      margin: 10px 0;
+    }
+    .space-entry li {
+      list-style-type: disc;
+    }
+    h2 {
+      color: #2d2b29;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h2>HENKERMAN<sup>&reg;</sup> HANGER: WARDROBE PLANNER</h2>
+  <p style="text-align: center; color: #5b504a; font-weight: normal; margin-top: 5px;">Enter the width of each space in your wardrobe and estimate the number of Henkerman<sup>&reg;</sup> hangers that will fit there.</p>
+  <label for="wardrobeWidth">Wardrobe Space Width (cm):</label>
+  <input type="number" id="wardrobeWidth" min="0" placeholder="e.g. 120">
+
+  <label for="hangerType">Select Hanger Type:</label>
+  <select id="hangerType">
+    <option value="Men's Coat Hanger">Men's Coat/Suit Hangers</option>
+    <option value="Men's Shirt Hanger">Men's Shirt/Dress Hangers</option>
+    <option value="Women's Coat Hanger">Women's Coat/Suit Hangers</option>
+    <option value="Women's Shirt Hanger">Women's Shirt/Dress Hangers</option>
+    <option value="Pant Hanger">Pant/Skirt Hangers</option>
+    <option value="Belt Hanger">Belt Hangers</option>
+    <option value="Tie Hanger">Tie Hangers</option>
+    <option value="Scarf Hanger">Scarf Hangers</option>
+  </select>
+
+  <label for="hangerStatus">Hanger Status:</label>
+  <select id="hangerStatus">
+    <option value="with">With Garments on Hangers</option>
+    <option value="without">Without Garments on Hangers</option>
+  </select>
+  <p style="font-size: 0.8em; color: #5b504a; margin-top: 4px;"><em>Note: Based on a typical garment thickness for each hanger.</em></p>
+
+  <label for="spacing">Space Between Garments (cm):</label>
+  <input type="number" id="spacing" min="0" placeholder="e.g. 1" step="0.1">
+
+  <button onclick="addWardrobeSpace()" style="text-transform: uppercase; font-size: 1.2em;">Add Wardrobe Space</button>
+  <p style="text-align: center; margin-top: 10px;"><a href="#" onclick="clearPlanner()" style="color: #a83232; text-decoration: underline; font-size: 0.9em;">Clear All</a></p>
+
+  <div id="error" style="color: red; text-align: center; font-weight: bold; display: none; margin-top: 10px;">Negative numbers not valid</div>
+  <div id="entries"></div>
+  <div class="total" id="totalHangers" style="background-color: #27150f; color: #ffffff; padding: 12px; border-radius: 8px; display: none;"></div>
+
+  <script>
+    let totalHangers = 0;
+    let spaceCounter = 1;
+
+    const profileThickness = {
+      "Men's Coat Hanger": { with: 6, without: 5 },
+      "Men's Shirt Hanger": { with: 3.25, without: 3 },
+      "Women's Coat Hanger": { with: 6, without: 5 },
+      "Women's Shirt Hanger": { with: 3.25, without: 3 },
+      "Pant Hanger": { with: 2.5, without: 2.5 },
+      "Belt Hanger": { with: 6.5, without: 6.5 },
+      "Tie Hanger": { with: 3, without: 2.5 },
+      "Scarf Hanger": { with: 6, without: 2 }
+    };
+
+    function addWardrobeSpace() {
+      const errorDiv = document.getElementById('error');
+      const width = parseFloat(document.getElementById('wardrobeWidth').value);
+      const spacing = parseFloat(document.getElementById('spacing').value) || 0;
+
+      if (width < 0 || spacing < 0) {
+        let errorMessage = 'Negative numbers not valid';
+        if (width < 0 && spacing < 0) {
+          errorMessage += ' for Wardrobe Width and Spacing';
+        } else if (width < 0) {
+          errorMessage += ' for Wardrobe Width';
+        } else if (spacing < 0) {
+          errorMessage += ' for Spacing';
+        }
+        errorDiv.textContent = errorMessage;
+        errorDiv.style.display = 'block';
+        return;
+      } else {
+        errorDiv.style.display = 'none';
+      }
+
+      const hangerType = document.getElementById('hangerType').value;
+      const hangerStatus = document.getElementById('hangerStatus').value;
+      const hangerProfile = profileThickness[hangerType][hangerStatus];
+
+      if (isNaN(width) || width <= 0) {
+        alert('Please enter a valid wardrobe width.');
+        return;
+      }
+
+      const adjustedWidth = width - spacing;
+      const numHangers = Math.floor(adjustedWidth / hangerProfile);
+      totalHangers += numHangers;
+
+      const statusText = hangerStatus === 'with' ? 'With Garments on Hangers' : 'Without Garments on Hangers';
+
+      const entry = document.createElement('div');
+      entry.classList.add('space-entry');
+      entry.innerHTML = `
+        <div style="background-color: #a83232; padding: 10px; border-radius: 8px; font-weight: bold; color: #ffffff;">
+          WARDROBE SPACE ${spaceCounter}: FOR ${document.getElementById('hangerType').options[document.getElementById('hangerType').selectedIndex].text.toUpperCase()}
+        </div>
+        <ul style="background-color: #ece6df; padding: 10px 20px; border-radius: 8px; list-style-position: inside;">
+          <li>${width}cm Length</li>
+          <li>${statusText}</li>
+          <li>${spacing}cm Spacing Between Garments</li>
+        </ul>
+        <div style="background-color: #a83232; padding: 10px; border-radius: 8px; font-weight: bold; color: #ffffff; text-transform: uppercase;">
+          TOTAL: ${numHangers} ${document.getElementById('hangerType').options[document.getElementById('hangerType').selectedIndex].text.toUpperCase()}
+        </div>
+      `;
+      document.getElementById('entries').appendChild(entry);
+
+      const totalEl = document.getElementById('totalHangers');
+      totalEl.textContent = `GRAND TOTAL - FULL WARDROBE: ${totalHangers} HANGERS`;
+      totalEl.style.display = 'block';
+
+      document.getElementById('wardrobeWidth').value = '';
+      spaceCounter++;
+    }
+  
+    function clearPlanner() {
+      document.getElementById('entries').innerHTML = '';
+      const totalEl = document.getElementById('totalHangers');
+      totalEl.textContent = '';
+      totalEl.style.display = 'none';
+      document.getElementById('wardrobeWidth').value = '';
+      document.getElementById('spacing').value = '';
+      document.getElementById('error').style.display = 'none';
+      totalHangers = 0;
+      spaceCounter = 1;
+    }
+  </script>
+</body>
+</html>
