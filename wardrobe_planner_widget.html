@@ -98,15 +98,30 @@
   <input type="number" id="spacing" min="0" placeholder="e.g. 1" step="0.1">
 
   <button onclick="addWardrobeSpace()" style="text-transform: uppercase; font-size: 1.2em;">Add Wardrobe Space</button>
-  <p style="text-align: center; margin-top: 10px;"><a href="#" onclick="clearPlanner()" style="color: #a83232; text-decoration: underline; font-size: 0.9em;">Clear All</a></p>
+  <p style="text-align: center; margin-top: 10px;">
+    <a href="#" onclick="clearPlanner()" style="color: #a83232; text-decoration: underline; font-size: 0.9em;">Clear All</a>
+  </p>
+
+  <div style="margin-top: 20px; text-align: center;">
+    <button id="canvasToggle" onclick="toggleCanvas()" style="background-color: #a83232; text-transform: uppercase;">Open in Canvas</button>
+  </div>
 
   <div id="error" style="color: red; text-align: center; font-weight: bold; display: none; margin-top: 10px;">Negative numbers not valid</div>
   <div id="entries"></div>
   <div class="total" id="totalHangers" style="background-color: #27150f; color: #ffffff; padding: 12px; border-radius: 8px; display: none;"></div>
 
+  <div id="canvasContainer" style="margin-top: 20px; display: none;">
+    <div style="background-color: #ece6df; padding: 10px; border-radius: 8px; color: #2d2b29; text-align: center; font-weight: bold;">Wardrobe Canvas Overview</div>
+    <div style="background-color: #fff; border: 1px solid #c9beb5; border-radius: 8px; margin-top: 10px; padding: 10px;">
+      <canvas id="wardrobeCanvas" width="600" height="160" style="width: 100%; max-width: 100%;"></canvas>
+      <p style="font-size: 0.85em; color: #5b504a; margin-top: 8px; text-align: center;">Each bar represents a wardrobe space. Length is scaled by wardrobe width and label shows hanger counts.</p>
+    </div>
+  </div>
+
   <script>
     let totalHangers = 0;
     let spaceCounter = 1;
+    const spaces = [];
 
     const profileThickness = {
       "Men's Coat Hanger": { with: 6, without: 5 },
@@ -149,32 +164,46 @@
         return;
       }
 
-      const adjustedWidth = width - spacing;
-      const numHangers = Math.floor(adjustedWidth / hangerProfile);
+      const numHangers = Math.max(
+        Math.floor((width + spacing) / (hangerProfile + spacing)),
+        0
+      );
       totalHangers += numHangers;
+
+      const entryId = spaceCounter;
+      const hangerText = document.getElementById('hangerType').options[document.getElementById('hangerType').selectedIndex].text.toUpperCase();
+      spaces.push({ id: entryId, width, spacing, hangerText, numHangers });
 
       const statusText = hangerStatus === 'with' ? 'With Garments on Hangers' : 'Without Garments on Hangers';
 
       const entry = document.createElement('div');
       entry.classList.add('space-entry');
+      entry.id = `space-${entryId}`;
       entry.innerHTML = `
-        <div style="background-color: #a83232; padding: 10px; border-radius: 8px; font-weight: bold; color: #ffffff;">
-          WARDROBE SPACE ${spaceCounter}: FOR ${document.getElementById('hangerType').options[document.getElementById('hangerType').selectedIndex].text.toUpperCase()}
+        <div style=\"background-color: #a83232; padding: 10px; border-radius: 8px; font-weight: bold; color: #ffffff;\">
+          WARDROBE SPACE ${spaceCounter}: FOR ${hangerText}
         </div>
-        <ul style="background-color: #ece6df; padding: 10px 20px; border-radius: 8px; list-style-position: inside;">
+        <ul style=\"background-color: #ece6df; padding: 10px 20px; border-radius: 8px; list-style-position: inside;\">
           <li>${width}cm Length</li>
           <li>${statusText}</li>
           <li>${spacing}cm Spacing Between Garments</li>
         </ul>
-        <div style="background-color: #a83232; padding: 10px; border-radius: 8px; font-weight: bold; color: #ffffff; text-transform: uppercase;">
-          TOTAL: ${numHangers} ${document.getElementById('hangerType').options[document.getElementById('hangerType').selectedIndex].text.toUpperCase()}
+        <div style=\"background-color: #a83232; padding: 10px; border-radius: 8px; font-weight: bold; color: #ffffff; text-transform: uppercase;\">
+          TOTAL: ${numHangers} ${hangerText}
         </div>
+        <div style=\"display: flex; justify-content: flex-end; margin-top: -5px; padding-right: 10px;\"><button style='background:none; border:none; color:#a83232; text-decoration:underline; cursor:pointer; font-size: 0.85em;' onclick='deleteWardrobeSpace(${entryId})'>DELETE WARDROBE SPACE ${spaceCounter}</button></div>
       `;
       document.getElementById('entries').appendChild(entry);
 
       const totalEl = document.getElementById('totalHangers');
       totalEl.textContent = `GRAND TOTAL - FULL WARDROBE: ${totalHangers} HANGERS`;
       totalEl.style.display = 'block';
+
+      renderCanvas();
+      if (spaces.length === 1) {
+        document.getElementById('canvasContainer').style.display = 'block';
+        document.getElementById('canvasToggle').textContent = 'Close Canvas';
+      }
 
       document.getElementById('wardrobeWidth').value = '';
       spaceCounter++;
@@ -190,6 +219,87 @@
       document.getElementById('error').style.display = 'none';
       totalHangers = 0;
       spaceCounter = 1;
+      spaces.length = 0;
+      document.getElementById('canvasContainer').style.display = 'none';
+      document.getElementById('canvasToggle').textContent = 'Open in Canvas';
+      renderCanvas();
+    }
+
+    function deleteWardrobeSpace(id) {
+      const index = spaces.findIndex(space => space.id === id);
+      if (index !== -1) {
+        totalHangers -= spaces[index].numHangers;
+        spaces.splice(index, 1);
+      }
+
+      const entry = document.getElementById(`space-${id}`);
+      if (entry) entry.remove();
+
+      const totalEl = document.getElementById('totalHangers');
+      if (totalHangers > 0) {
+        totalEl.textContent = `GRAND TOTAL - FULL WARDROBE: ${totalHangers} HANGERS`;
+        totalEl.style.display = 'block';
+      } else {
+        totalHangers = 0;
+        totalEl.textContent = '';
+        totalEl.style.display = 'none';
+      }
+
+      if (!spaces.length) {
+        document.getElementById('canvasContainer').style.display = 'none';
+        document.getElementById('canvasToggle').textContent = 'Open in Canvas';
+      }
+
+      renderCanvas();
+    }
+
+    function toggleCanvas() {
+      const container = document.getElementById('canvasContainer');
+      const toggleButton = document.getElementById('canvasToggle');
+      const isHidden = container.style.display === 'none' || container.style.display === '';
+
+      container.style.display = isHidden ? 'block' : 'none';
+      toggleButton.textContent = isHidden ? 'Close Canvas' : 'Open in Canvas';
+
+      if (!isHidden) return;
+      renderCanvas();
+    }
+
+    function renderCanvas() {
+      const canvas = document.getElementById('wardrobeCanvas');
+      const ctx = canvas.getContext('2d');
+      const padding = 20;
+
+      canvas.width = canvas.clientWidth;
+      canvas.height = Math.max(spaces.length * 70 + padding * 2, 160);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (!spaces.length) {
+        ctx.fillStyle = '#5b504a';
+        ctx.font = '16px Arial';
+        ctx.fillText('Add wardrobe spaces to see them mapped here.', padding, padding + 10);
+        return;
+      }
+
+      const maxWidth = Math.max(...spaces.map(space => space.width)) || 1;
+      const usableWidth = canvas.width - padding * 2;
+      let y = padding;
+
+      spaces.forEach(space => {
+        const barWidth = Math.max((space.width / maxWidth) * usableWidth, 10);
+        ctx.fillStyle = '#a83232';
+        ctx.fillRect(padding, y, barWidth, 32);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 14px Arial';
+        ctx.fillText(`${space.numHangers} ${space.hangerText}`, padding + 8, y + 21);
+
+        ctx.fillStyle = '#5b504a';
+        ctx.font = '12px Arial';
+        ctx.fillText(`${space.width}cm width`, padding + barWidth + 10, y + 21);
+
+        y += 50;
+      });
     }
   </script>
 </body>
