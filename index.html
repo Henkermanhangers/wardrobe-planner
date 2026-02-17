@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HENKERMAN® WARDROBE HANGER PLANNER v1.6</title>
+  <style>
+    :root {
+      --bg: #ddd2c0;
+      --ink: #2d2b29;
+      --ink-muted: #5b504a;
+      --line: #c9beb5;
+      --line-strong: #999999;
+      --panel: #ece6df;
+      --cta: #27150f;
+      --cta-alt: #800000;
+      --danger: #a83232;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 820px;
+      margin: 20px auto;
+      padding: 20px;
+      background-color: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: 0 0 12px rgba(0,0,0,0.05);
+      color: var(--ink);
+    }
+    h2 {
+      color: var(--ink);
+      text-align: center;
+      font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+      margin: 0 0 6px;
+    }
+    .lead { text-align: center; color: var(--ink-muted); font-weight: bold; margin: 5px 0 16px; }
+    hr { border: 1px solid var(--line-strong); margin: 10px 0 20px; }
+    label { display: block; margin-top: 15px; color: var(--ink-muted); font-weight: bold; }
+    input, select { width: 100%; padding: 12px; margin-top: 5px; border-radius: 6px; border: 1px solid var(--line); background-color: #fff; color: var(--ink); }
+    .half { width: 50%; }
+    .subnote { font-size: 0.8em; color: var(--ink-muted); margin-top: 4px; }
+    .btn { margin-top: 20px; padding: 12px; width: 100%; background-color: var(--cta); color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 1.1em; }
+    .link { text-decoration: underline; font-size: 0.8em; font-weight: bold; cursor: pointer; }
+    .link-danger { color: var(--danger); }
+    .link-neutral { color: #3b3b3b; }
+    .actions { text-align: right; margin-top: 10px; }
+    .result, .total-button { display: none; margin-top: 20px; text-align: center; }
+    .total-button a { display: block; width: 100%; background-color: var(--cta-alt); color: white; padding: 12px; border-radius: 8px; font-weight: bold; text-decoration: none; text-transform: uppercase; }
+    .space-entry { border-top: 1px solid #999; margin-top: 20px; padding-top: 10px; }
+    .space-entry ul { margin: 10px 0; background-color: var(--panel); padding: 10px 20px; border-radius: 8px; list-style: none; }
+    .entry-head { display: flex; justify-content: space-between; align-items: center; }
+    .meta { font-size: 0.75em; color: var(--ink-muted); text-align: center; margin-top: 10px; }
+    .view-vars { text-decoration: underline; font-weight: bold; color: var(--ink); }
+    #error { color: red; text-align: center; font-weight: bold; display: none; margin-top: 10px; }
+
+    /* Per-entry visual */
+    .entry-viz { background: #f6f2ec; border: 1px solid var(--line); border-radius: 10px; padding: 8px; margin-top: 10px; }
+    .entry-viz svg { width: 100%; height: auto; display: block; }
+
+    /* Legend */
+    #legendContainer { margin-top: 24px; background: #f6f2ec; border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+    #legend { display: flex; flex-wrap: wrap; gap: 8px; font-size: 12px; margin-top: 8px; }
+    .swatch { width: 14px; height: 14px; border-radius: 3px; display: inline-block; margin-right: 6px; border: 1px solid rgba(0,0,0,0.15); }
+
+    /* Inline edit styles */
+    .edit-grid { display: grid; grid-template-columns: 1.2fr 0.8fr 1fr 1fr 0.8fr; gap: 8px; align-items: center; }
+    .edit-actions { text-align: right; margin-top: 8px; }
+    .small-btn { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--line); background: #fff; cursor: pointer; }
+    .small-btn.primary { background: var(--cta); color: #fff; border-color: var(--cta); }
+  </style>
+</head>
+<body>
+  <h2>HENKERMAN<sup>&reg;</sup> WARDROBE HANGER PLANNER</h2>
+  <p class="lead">Enter the width of each space in your wardrobe and estimate the number of Henkerman<sup>&reg;</sup> hangers that will fit there.</p>
+  <hr />
+
+  <label for="spaceName">Wardrobe Space Name:</label>
+  <input type="text" id="spaceName" placeholder="e.g. Left Side - Section 1" />
+
+  <label for="wardrobeWidth">Wardrobe Space Width (cm):</label>
+  <input type="number" id="wardrobeWidth" min="0" step="0.1" placeholder="e.g. 120" />
+
+  <label for="hangerType">Choose Hanger Type:</label>
+  <select id="hangerType" class="half">
+    <option value="Men's Coat Hanger">Men's Coat/Suit Hangers</option>
+    <option value="Men's Shirt Hanger">Men's Shirt/Dress Hangers</option>
+    <option value="Women's Coat Hanger">Women's Coat/Suit Hangers</option>
+    <option value="Women's Shirt Hanger">Women's Shirt/Dress Hangers</option>
+    <option value="Pant Hanger">Pant/Skirt Hangers</option>
+    <option value="Belt Hanger">Belt Hangers</option>
+    <option value="Tie Hanger">Tie Hangers</option>
+    <option value="Scarf Hanger">Scarf Hangers</option>
+  </select>
+
+  <label for="hangerStatus">Measure With:</label>
+  <select id="hangerStatus" class="half">
+    <option value="with">Garments on Hangers</option>
+    <option value="without">No Garments on Hangers</option>
+  </select>
+  <p class="subnote"><em>Note: Based on a typical garment thickness for each hanger.</em></p>
+
+  <label for="spacing">Add Space Between Garments (cm):</label>
+  <input type="number" id="spacing" min="0" step="0.1" placeholder="e.g. 1" />
+
+  <button class="btn" onclick="addWardrobeSpace()">Add Wardrobe Space</button>
+  <p class="actions"><a href="#" class="link link-danger" onclick="clearPlanner()">CLEAR ALL</a></p>
+
+  <div id="error" role="status" aria-live="polite">Negative numbers not valid</div>
+  <div id="entries" aria-live="polite"></div>
+
+  <hr />
+  <div id="totalHangers" class="total-button">
+    <a id="shopLink" href="https://henkerman.com.au/collections/wardrobe-hanger-collections" target="_blank" rel="noopener noreferrer">GRAND TOTAL: 0 HANGERS | <span style="text-decoration: underline;">SHOP NOW</span></a>
+  </div>
+
+  <div id="legendContainer" aria-label="Legend">
+    <strong>Legend</strong>
+    <div id="legend"></div>
+  </div>
+
+  <p class="meta">
+    Wardrobe Planner v1.6 | Copyright Henkerman<sup>&reg;</sup><br />
+    <a href="#" class="view-vars" onclick="toggleVariables()">View Variables</a>
+  </p>
+
+  <div id="variablesPanel" style="display: none; font-size: 0.75em; color: var(--ink); margin-top: 10px; border: 1px solid #ccc; padding: 10px; background-color: #f9f9f9; border-radius: 6px;">
+    <strong>Hanger Profile Thickness (cm):</strong><br />
+    <ul>
+      <li>Men's Coat Hanger - With Garments: 6cm | Without Garments: 5cm</li>
+      <li>Men's Shirt Hanger - With Garments: 3.25cm | Without Garments: 3cm</li>
+      <li>Women's Coat Hanger - With Garments: 6cm | Without Garments: 5cm</li>
+      <li>Women's Shirt Hanger - With Garments: 3.25cm | Without Garments: 3cm</li>
+      <li>Pant Hanger - With or Without Garments: 2.5cm</li>
+      <li>Belt Hanger - With or Without Garments: 6.5cm</li>
+      <li>Tie Hanger - With Garments: 3cm | Without Garments: 2.5cm</li>
+      <li>Scarf Hanger - With Garments: 6cm | Without Garments: 2cm</li>
+    </ul>
+  </div>
+
+  <script>
+    // ------------------ Data & helpers ------------------
+    const THICKNESS_CM = Object.freeze({
+      "Men's Coat Hanger":   { with: 6.0,  without: 5.0 },
+      "Men's Shirt Hanger":  { with: 3.25, without: 3.0 },
+      "Women's Coat Hanger": { with: 6.0,  without: 5.0 },
+      "Women's Shirt Hanger":{ with: 3.25, without: 3.0 },
+      "Pant Hanger":         { with: 2.5,  without: 2.5 },
+      "Belt Hanger":         { with: 6.5,  without: 6.5 },
+      "Tie Hanger":          { with: 3.0,  without: 2.5 },
+      "Scarf Hanger":        { with: 6.0,  without: 2.0 }
+    });
+
+    const TYPE_COLORS = Object.freeze({
+      "Men's Coat Hanger":   "#5A4638",
+      "Men's Shirt Hanger":  "#6D5B4B",
+      "Women's Coat Hanger": "#8C6D5A",
+      "Women's Shirt Hanger":"#A5846C",
+      "Pant Hanger":         "#5B6D4B",
+      "Belt Hanger":         "#6B4B6D",
+      "Tie Hanger":          "#4B6D6B",
+      "Scarf Hanger":        "#6D4B4B"
+    });
+
+    function computeCapacity(widthCm, thicknessCm, spacingCm) {
+      const W = Number(widthCm);
+      const t = Number(thicknessCm);
+      const s = Math.max(0, Number(spacingCm) || 0);
+      if (!isFinite(W) || !isFinite(t) || W < 0 || t <= 0) return 0;
+      return Math.max(0, Math.floor((W + s) / (t + s)));
+    }
+
+    const $ = (id) => document.getElementById(id);
+    const entriesEl = $('entries');
+    const errorEl = $('error');
+    const totalWrapEl = $('totalHangers');
+    const shopLinkEl = $('shopLink');
+    const legend = $('legend');
+
+    const sections = [];
+
+    function showError(msg) {
+      errorEl.textContent = msg;
+      errorEl.style.display = 'block';
+      setTimeout(() => (errorEl.style.display = 'none'), 2500);
+    }
+
+    function updateGrandTotal() {
+      const total = sections.reduce((sum, s) => sum + s.count, 0);
+      const text = `GRAND TOTAL: ${total} HANGERS | `;
+      shopLinkEl.firstChild.nodeValue = text;
+      totalWrapEl.style.display = sections.length ? 'block' : 'none';
+    }
+
+    function renderLegend() {
+      legend.innerHTML = '';
+      Object.entries(TYPE_COLORS).forEach(([label, color]) => {
+        const item = document.createElement('div');
+        item.innerHTML = `<span class="swatch" style="background:${color}"></span>${label}`;
+        legend.appendChild(item);
+      });
+    }
+
+    // Draw a per-entry visual under the entry summary
+    function renderEntryViz(s, hostEl) {
+      hostEl.innerHTML = '';
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('role', 'img');
+      svg.setAttribute('aria-label', `Visual for ${s.name || 'wardrobe section'}`);
+
+      // layout
+      const padding = { left: 8, right: 16, top: 8, bottom: 8 };
+      const railH = 16;
+      const labelPad = 12 + (String(s.count).length * 7); // room for count label
+      const innerW = hostEl.clientWidth ? hostEl.clientWidth - padding.left - padding.right - labelPad : 300;
+      const pxPerCm = s.width > 0 ? Math.max(0.5, Math.min(6, innerW / s.width)) : 4;
+      const railW = Math.max(0, (s.width || 0) * pxPerCm);
+      const viewW = padding.left + railW + padding.right + labelPad;
+      const viewH = padding.top + railH + padding.bottom;
+
+      svg.setAttribute('viewBox', `0 0 ${Math.max(1, viewW)} ${Math.max(1, viewH)}`);
+
+      const ns = 'http://www.w3.org/2000/svg';
+
+      // base rail
+      const rail = document.createElementNS(ns, 'rect');
+      rail.setAttribute('x', String(padding.left));
+      rail.setAttribute('y', String(padding.top));
+      rail.setAttribute('width', String(railW));
+      rail.setAttribute('height', String(railH));
+      rail.setAttribute('rx', '4');
+      rail.setAttribute('fill', '#e7dfd6');
+      rail.setAttribute('stroke', 'rgba(0,0,0,0.25)');
+      rail.setAttribute('stroke-width', '1');
+      svg.appendChild(rail);
+
+      // per-hanger segments + ticks
+      const color = TYPE_COLORS[s.type] || '#776B5E';
+      const t = THICKNESS_CM[s.type]?.[s.status] || 0;
+      const gap = Math.max(0, Number(s.spacing) || 0);
+      const pitch = t + gap;
+
+      for (let k = 0; k < s.count; k++) {
+        const segX = padding.left + k * pitch * pxPerCm;
+        const segW = Math.max(1, t * pxPerCm);
+
+        const seg = document.createElementNS(ns, 'rect');
+        seg.setAttribute('x', String(segX));
+        seg.setAttribute('y', String(padding.top));
+        seg.setAttribute('width', String(Math.min(segW, Math.max(0, railW - (segX - padding.left)))));
+        seg.setAttribute('height', String(railH));
+        seg.setAttribute('fill', color);
+        seg.setAttribute('opacity', '0.9');
+        svg.appendChild(seg);
+
+        const tick = document.createElementNS(ns, 'line');
+        tick.setAttribute('x1', String(segX));
+        tick.setAttribute('x2', String(segX));
+        tick.setAttribute('y1', String(padding.top));
+        tick.setAttribute('y2', String(padding.top + railH));
+        tick.setAttribute('stroke', 'rgba(0,0,0,0.35)');
+        tick.setAttribute('stroke-width', '1');
+        svg.appendChild(tick);
+      }
+
+      // capacity label at end of rail
+      const cap = document.createElementNS(ns, 'text');
+      cap.setAttribute('x', String(padding.left + railW + 6));
+      cap.setAttribute('y', String(padding.top + railH - 3));
+      cap.setAttribute('font-size', '12');
+      cap.textContent = `${s.count}`;
+      svg.appendChild(cap);
+
+      hostEl.appendChild(svg);
+    }
+
+    function makeEntryDOM(s, index) {
+      const outer = document.createElement('div');
+      outer.className = 'space-entry';
+      outer.dataset.index = String(index);
+
+      // Header row with name and actions
+      const head = document.createElement('div');
+      head.className = 'entry-head';
+      head.innerHTML = `
+        <div><strong>${s.name || 'Unnamed Space'}</strong></div>
+        <div>
+          <a href="#" class="link link-neutral" data-action="edit">Edit</a>
+          &nbsp;&nbsp;
+          <a href="#" class="link link-danger" data-action="delete">Delete</a>
+        </div>`;
+
+      outer.appendChild(head);
+
+      if (s._editing) {
+        // Inline edit grid
+        const wrap = document.createElement('div');
+        wrap.className = 'edit-grid';
+        wrap.innerHTML = `
+          <input type="text" data-field="name" value="${s.name || ''}" placeholder="Space name" />
+          <input type="number" step="0.1" min="0" data-field="width" value="${s.width}" placeholder="Width (cm)" />
+          <select data-field="type">
+            ${Object.keys(THICKNESS_CM).map(k => `<option value="${k}" ${k===s.type?'selected':''}>${k}</option>`).join('')}
+          </select>
+          <select data-field="status">
+            <option value="with" ${s.status==='with'?'selected':''}>Garments on Hangers</option>
+            <option value="without" ${s.status==='without'?'selected':''}>No Garments on Hangers</option>
+          </select>
+          <input type="number" step="0.1" min="0" data-field="spacing" value="${s.spacing}" placeholder="Spacing (cm)" />
+        `;
+        outer.appendChild(wrap);
+
+        const actions = document.createElement('div');
+        actions.className = 'edit-actions';
+        actions.innerHTML = `
+          <button class="small-btn" data-action="cancel">Cancel</button>
+          <button class="small-btn primary" data-action="save">Save</button>`;
+        outer.appendChild(actions);
+      } else {
+        // Read-only facts
+        const ul = document.createElement('ul');
+        ul.innerHTML = `
+          <li>Width: ${Number(s.width).toFixed(1)} cm</li>
+          <li>Type: ${s.type} | Measure: ${s.status === 'with' ? 'Garments on Hangers' : 'No Garments on Hangers'} | Spacing: ${Number(s.spacing || 0).toFixed(1)} cm</li>
+          <li><strong>Estimated: ${s.count} hanger${s.count === 1 ? '' : 's'}</strong></li>
+        `;
+        outer.appendChild(ul);
+
+        const vizHost = document.createElement('div');
+        vizHost.className = 'entry-viz';
+        vizHost.setAttribute('data-viz', '');
+        outer.appendChild(vizHost);
+      }
+
+      return outer;
+    }
+
+    function renderEntries() {
+      entriesEl.innerHTML = '';
+      sections.forEach((s, i) => {
+        const node = makeEntryDOM(s, i);
+        entriesEl.appendChild(node);
+        // draw viz only when not editing
+        if (!s._editing) {
+          const host = node.querySelector('[data-viz]');
+          if (host) renderEntryViz(s, host);
+        }
+      });
+      updateGrandTotal();
+      renderLegend();
+    }
+
+    // ------------------ Public API (inline handlers) ------------------
+    window.addWardrobeSpace = function addWardrobeSpace() {
+      const nameInput = $('spaceName');
+      const widthInput = $('wardrobeWidth');
+      const typeInput = $('hangerType');
+      const statusInput = $('hangerStatus');
+      const spacingInput = $('spacing');
+
+      const name = nameInput.value.trim();
+      const width = parseFloat(widthInput.value);
+      const type = typeInput.value;
+      const status = statusInput.value; // 'with' | 'without'
+      const spacing = parseFloat(spacingInput.value);
+
+      if (isNaN(width)) { showError('Please enter a wardrobe width.'); return; }
+      if (width < 0 || (typeof spacing === 'number' && spacing < 0)) { showError('Negative numbers not valid'); return; }
+
+      const t = THICKNESS_CM[type]?.[status];
+      if (!t) { showError('Unknown hanger type or status.'); return; }
+
+      const count = computeCapacity(width, t, spacing || 0);
+      sections.push({ name, width, type, status, spacing: spacing || 0, count });
+
+      renderEntries();
+
+      // Reset text/number fields, keep current dropdowns, refocus on name for fast entry
+      nameInput.value = '';
+      widthInput.value = '';
+      spacingInput.value = '';
+      nameInput.focus();
+    };
+
+    window.clearPlanner = function clearPlanner() {
+      sections.length = 0;
+      renderEntries();
+    };
+
+    // Delegated actions (edit / save / cancel / delete)
+    entriesEl.addEventListener('click', (e) => {
+      const a = e.target.closest('a, button');
+      if (!a) return;
+      const wrapper = a.closest('.space-entry');
+      if (!wrapper) return;
+      e.preventDefault();
+      const idx = Number(wrapper.dataset.index);
+      if (isNaN(idx)) return;
+
+      const action = a.getAttribute('data-action');
+      if (action === 'delete') {
+        sections.splice(idx, 1);
+        renderEntries();
+        return;
+      }
+      if (action === 'edit') {
+        sections.forEach((s, i) => s._editing = i === idx); // only one at a time
+        renderEntries();
+        return;
+      }
+      if (action === 'cancel') {
+        sections[idx]._editing = false;
+        renderEntries();
+        return;
+      }
+      if (action === 'save') {
+        const container = wrapper.querySelector('.edit-grid');
+        const get = (sel) => container.querySelector(sel);
+        const name = get('input[data-field="name"]').value.trim();
+        const width = parseFloat(get('input[data-field="width"]').value);
+        const type = get('select[data-field="type"]').value;
+        const status = get('select[data-field="status"]').value;
+        const spacing = parseFloat(get('input[data-field="spacing"]').value);
+
+        if (isNaN(width)) { showError('Please enter a wardrobe width.'); return; }
+        if (width < 0 || (typeof spacing === 'number' && spacing < 0)) { showError('Negative numbers not valid'); return; }
+        const t = THICKNESS_CM[type]?.[status];
+        if (!t) { showError('Unknown hanger type or status.'); return; }
+
+        const count = computeCapacity(width, t, spacing || 0);
+        sections[idx] = { name, width, type, status, spacing: spacing || 0, count, _editing: false };
+        renderEntries();
+        return;
+      }
+    });
+
+    // ------------------ Tests ------------------
+    (function runTests() {
+      try {
+        console.groupCollapsed('Wardrobe Planner – unit tests');
+        console.assert(computeCapacity(120, 3, 0) === 40, '120cm, t=3, s=0 -> 40');
+        console.assert(computeCapacity(100, 5, 1) === 16, '100cm, t=5, s=1 -> 16');
+        console.assert(computeCapacity(90, 2.5, 0) === 36, '90cm, t=2.5, s=0 -> 36');
+        console.assert(computeCapacity(60, 6, 0) === 10, '60cm, t=6, s=0 -> 10');
+        console.assert(computeCapacity(60, 6, 1) === 8,  '60cm, t=6, s=1 -> 8');
+        console.assert(computeCapacity(0, 3, 0) === 0,   '0cm width -> 0');
+        console.assert(computeCapacity(50, 3, -2) === 16, 'negative spacing treated as 0: 50/3 -> 16');
+        console.assert(THICKNESS_CM["Men's Shirt Hanger"].with === 3.25, "Men's Shirt with = 3.25");
+        console.assert(THICKNESS_CM["Scarf Hanger"].without === 2.0, 'Scarf without = 2.0');
+        console.log('All assertions passed.');
+        console.groupEnd();
+      } catch (err) {
+        console.error('Test failure:', err);
+      }
+    })();
+
+    // ------------------ Misc ------------------
+    function toggleVariables() {
+      const panel = document.getElementById('variablesPanel');
+      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    }
+    window.toggleVariables = toggleVariables;
+
+    // first paint
+    renderEntries();
+  </script>
+</body>
+</html>
