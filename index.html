@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>HENKERMAN® WARDROBE HANGER PLANNER v1.6</title>
+  <title>HENKERMAN&reg; WARDROBE HANGER PLANNER v2.1</title>
   <style>
     :root {
       --bg: #ddd2c0;
@@ -73,11 +73,11 @@
 </head>
 <body>
   <h2>HENKERMAN<sup>&reg;</sup> WARDROBE HANGER PLANNER</h2>
-  <p class="lead">Enter the width of each space in your wardrobe and estimate the number of Henkerman<sup>&reg;</sup> hangers that will fit there.</p>
+  <p class="lead">Enter the length of each rail in your wardrobe to calculate how many Henkerman<sup>&reg;</sup>hangers will fit.</p>
   <hr />
 
   <label for="spaceName">Wardrobe Space Name:</label>
-  <input type="text" id="spaceName" placeholder="e.g. Left Side - Section 1" />
+  <input type="text" id="spaceName" placeholder="e.g. Rail 1 – Left Side (Suits)" />
 
   <label for="wardrobeWidth">Wardrobe Space Width (cm):</label>
   <input type="number" id="wardrobeWidth" min="0" step="0.1" placeholder="e.g. 120" />
@@ -105,7 +105,9 @@
   <input type="number" id="spacing" min="0" step="0.1" placeholder="e.g. 1" />
 
   <button class="btn" onclick="addWardrobeSpace()">Add Wardrobe Space</button>
-  <p class="actions"><a href="#" class="link link-danger" onclick="clearPlanner()">CLEAR ALL</a></p>
+  <p class="actions">
+    <a href="#" class="link link-danger" onclick="clearPlanner()">CLEAR ALL</a>
+  </p>
 
   <div id="error" role="status" aria-live="polite">Negative numbers not valid</div>
   <div id="entries" aria-live="polite"></div>
@@ -121,7 +123,7 @@
   </div>
 
   <p class="meta">
-    Wardrobe Planner v1.6 | Copyright Henkerman<sup>&reg;</sup><br />
+    Wardrobe Planner v2.1 - Public | Copyright Henkerman<sup>&reg;</sup><br />
     <a href="#" class="view-vars" onclick="toggleVariables()">View Variables</a>
   </p>
 
@@ -179,6 +181,53 @@
     const legend = $('legend');
 
     const sections = [];
+    const STORAGE_KEY = 'henkerman.wardrobePlanner.sections.v2_1';
+
+    function persistSections() {
+      try {
+        const payload = sections.map(({ name, width, type, status, spacing, count }) => ({
+          name,
+          width,
+          type,
+          status,
+          spacing,
+          count
+        }));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      } catch (err) {
+        console.warn('Unable to persist planner data:', err);
+      }
+    }
+
+    function loadSavedSections() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return;
+
+        sections.length = 0;
+        parsed.forEach((item) => {
+          const type = item?.type;
+          const status = item?.status;
+          const t = THICKNESS_CM[type]?.[status];
+          const width = Number(item?.width);
+          const spacing = Math.max(0, Number(item?.spacing) || 0);
+          if (!t || !isFinite(width) || width < 0) return;
+
+          sections.push({
+            name: typeof item?.name === 'string' ? item.name : '',
+            width,
+            type,
+            status,
+            spacing,
+            count: computeCapacity(width, t, spacing)
+          });
+        });
+      } catch (err) {
+        console.warn('Unable to load saved planner data:', err);
+      }
+    }
 
     function showError(msg) {
       errorEl.textContent = msg;
@@ -349,6 +398,7 @@
       });
       updateGrandTotal();
       renderLegend();
+      persistSections();
     }
 
     // ------------------ Public API (inline handlers) ------------------
@@ -438,7 +488,7 @@
     // ------------------ Tests ------------------
     (function runTests() {
       try {
-        console.groupCollapsed('Wardrobe Planner – unit tests');
+        console.groupCollapsed('Wardrobe Planner - unit tests');
         console.assert(computeCapacity(120, 3, 0) === 40, '120cm, t=3, s=0 -> 40');
         console.assert(computeCapacity(100, 5, 1) === 16, '100cm, t=5, s=1 -> 16');
         console.assert(computeCapacity(90, 2.5, 0) === 36, '90cm, t=2.5, s=0 -> 36');
@@ -463,6 +513,7 @@
     window.toggleVariables = toggleVariables;
 
     // first paint
+    loadSavedSections();
     renderEntries();
   </script>
 </body>
